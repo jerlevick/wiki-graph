@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Results{% endblock %}
+{% block content %}
+<h1>You may be interested in:</h1>
+{% for topic in top_ten %}<a href="http://{{topic[1]}}" target="_blank"><h2>{{topic[0]}}</h2></a>{% endfor %}
+{% endblock %}
+
