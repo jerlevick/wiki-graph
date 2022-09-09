@@ -24,7 +24,7 @@ to include pages that are outside the scope of the project, and the graph analys
 We expect the graph to have some properties of a scale-free network; at the very least, exhibiting a heavy-tailed distribution of the 
 node degrees, and this is exactly what we observe: 
 
-![Histogram of Node Degrees](\nodehist.png)
+![Histogram of Node Degrees](nodehist.png)
 
 
 This presents some difficulties for clustering, as a smaller number of pages exhibit a vast majority of the connectivity in the graph.
@@ -77,7 +77,7 @@ improve results.
 
 This cluster graph, too, was expected to exhibit some scale-free properties, and again, a heavy-tailed distribution of the degrees was observed:
 
-![Histogram of Cluster Graph Degrees](\clusterhist.png)
+![Histogram of Cluster Graph Degrees](clusterhist.png)
 
 ---------------
 The Recommender Algorithm
