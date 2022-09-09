@@ -99,3 +99,4 @@ We can also do an analysis on the pre-defined possible inputs, to see if the res
 
 ![Average Graph Distance from Clusters to their Results](clusterdist.png)
 
+The distance results seem to confirm that we are not just drawing directly on the graph structure; the similarity results show that we have mostly reasonable, if not outstanding similarity between inputs and results; but it is difficult to be certain to what extent this is owing to limitations of the clustering, of the word2vec representation of topics, or other reasons, without a more robust and reliable way to evaluate the results.
