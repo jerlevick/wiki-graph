@@ -11,6 +11,8 @@ import functools
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
 import gensim.downloader as api
+from gensim.parsing.preprocessing import remove_stopwords
+
 
 def project_graph(G, dim, condition = None):
     """A function to project a graph into a set of points in dim-dimensional space. These points can then be clustered later.
@@ -33,6 +35,11 @@ def project_graph(G, dim, condition = None):
     dim : int 
         The dimension of the vector space to project the points to. 
     
+
+    Returns 
+    --------------------------------
+    evecs: Array
+         The eigenvectors corresponding to the (dim)-largest eigenvalues of the transition matrix of the graph
     """
     n = len(G.nodes)
     A = nx.adj_matrix(G) 
@@ -61,6 +68,12 @@ def get_clusters(nodes, labels):
             Usually will be G.nodes for the original graph
     lables : Iterable of label assignments from a clustering algorithm
             Usually will be kmeans.labels_ or something of the sort
+
+    Returns 
+    -----------------------
+    clusters : dict
+        A dictionary of the labels output from k-means clustering as keys, with a list ofthe nodes of the graph 
+        in the associated cluster as the values
     """
     return {j: list(np.array(nodes)[[i == j for i in labels]]) for j in set(labels)}
 
@@ -75,10 +88,16 @@ def get_cluster_categories(clusters, category_dict):
             A dictionary like the output of get_clusters, keyed by cluster indices and valued with lists of nodes in the cluster
     category_dict : Dict
             A dictionary keyed by nodes, and valued with lists of all categories associated to each node
+
+    Returns
+    -------------------------
+    cluster_categories: Dict    
+        A dictionary whose keys are the cluster labels, and values are all the categories corresponding to nodes
+        within that cluster
     """
     return  {j: functools.reduce(lambda x, y: x + y, (category_dict[k] if k in category_dict else [] for k in clusters[j])) for j in clusters}
 
-def get_cluster_names(cluster_categories, cluster_centers):
+def get_cluster_names(clusters, cluster_categories, cluster_centers):
     """A function to use word2vec to look at the cluster categories and try and name each cluster
     
     Parameters
@@ -90,6 +109,12 @@ def get_cluster_names(cluster_categories, cluster_centers):
             of each cluster
 
     Uses gensim's pre-trained glove-wiki-gigaword-300 word2vec model to find a word2vec vector to name each cluster
+
+    Returns
+    --------------------
+    cluster_names : Dict
+        A dictionary whose keys are cluster labels, and values are a word2vec vector that is the average vector of 
+        all the categories corresponding to nodes in that cluster
     """
     
     cluster_names = dict()
@@ -101,6 +126,7 @@ def get_cluster_names(cluster_categories, cluster_centers):
         if i in cluster_centers and cluster_centers[i][1]:
             words += [word.lower() for cat in cluster_centers[i][1] for word in cat.split(' ')] 
         
+        words = remove_stopwords(' '.join(words)).split(' ')
         avg_vect = np.zeros(300)
         count = 0
         
@@ -126,6 +152,12 @@ def make_cluster_graph(G, clusters):
         The original graph from which the clusters derive
     clusters : Dict
         The dictionary whose keys are cluster indices and values are lists of all nodes in each cluster
+
+    Returns
+    ----------------
+    new_G : Dict
+        A dictionary representation of the multigraph, with keys being cluster labels, and values are lists of
+        all neighbouring cluster labels
     """
 
     new_G = {i : [] for i in range(len(clusters))}
@@ -138,7 +170,7 @@ def make_cluster_graph(G, clusters):
     return new_G
 
 
-def find_clusters(projected_graph, G, category_dict):
+def find_clusters(projected_graph, G, category_dict, num_clusters):
     """A function to take a given graph, the projection of it into a lower dimensional space via a spectral projection, and a dictionary of 
     categories for each node in the graph, to perform kmeans clustering on the spectral projection, and return the cluster labels for each node
     and the central node for each cluster
@@ -153,8 +185,16 @@ def find_clusters(projected_graph, G, category_dict):
     category_dict : Dict
             Used to return a dictionary keyed by clusters, and whose values are the cluster center, and the categories corresponding 
             to the cluster center
+
+    Returns
+    ------------------
+    kmeans_labels : List
+        The ordered list of labels assigning each node to the label of the cluster it lies in, as found by kmeans
+        clustering
+    cluster_centers : List
+        A list of arrays, with each array being the coordinates of the most central node in each cluster
     """
-    kmeans = KMeans(n_clusters=1000)
+    kmeans = KMeans(n_clusters=num_clusters)
     kmeans.fit(projected_graph)
     cluster_centers = dict()
     for i in set(kmeans.labels_):

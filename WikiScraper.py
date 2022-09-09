@@ -5,12 +5,35 @@ import networkx as nx
 import json 
 
 def find_sections(soup):
-    """Finds sections in a BeautifulSoup object by searching for h2 headers"""
+    """Finds sections in a BeautifulSoup object by searching for h2 headers
+    
+    Parameters
+    -----------------
+    soup : BeautifulSoup object
+        A BS4 object representation of a Wikipedia page
+
+    Returns
+    ------------------
+    sections : List
+        A list of all the section headings of sections in the Wikipedia page
+    """
 
     return [i.text for i in soup.find_all('h2')]
 
 def go_to_section(soup, section):
-    """Returns a BeautifulSoup object of the html of a particular section of a Wikipedia page"""
+    """Returns a BeautifulSoup object of the html of a particular section of a Wikipedia page
+    
+    Parameters
+    -----------------
+    soup : BeatifulSoup object
+        A BS4 object representation of a Wikipedia page
+    section : str
+        The heading of a section on the page to be returned
+
+    Returns
+    -----------------
+    A BeautifulSoup representation of the appropriate section of the Wikipedia page
+    """
 
     if not section in find_sections(soup):
         return
@@ -27,7 +50,19 @@ def go_to_section(soup, section):
         return BeautifulSoup(sexn,'html')
     
 def extract_see_also(soup):
-    """Gets the See Also section as a BeautifulSoup object from a particular BeautifulSoup object representing a Wikipedia page"""
+    """Gets the See Also section as a BeautifulSoup object from a particular BeautifulSoup object representing a 
+    Wikipedia page
+    
+    Parameters 
+    ----------------
+    soup : BeautifulSoup object
+        BS4 representation of a Wikipedia page
+
+    Returns
+    ----------------
+    see_also : BeautifulSoup object
+        BS4 representation of the "See Also" section of the Wikipedia page
+    """
 
     sections = find_sections(soup)
     if (i in sections for i in ['See also', 'See Also']):
@@ -37,7 +72,19 @@ def extract_see_also(soup):
     return see_also    
 
 def find_see_also_notes(soup):
-    """Find any other see also sections embedded in orther sections"""
+    """Find any other see also sections embedded in orther sections
+    
+    Parameters
+    -----------------
+    soup : BeautifulSoup object
+        A BS4 representation of a Wikipedia page
+
+    Returns
+    -----------------
+    ans : List
+        A list of tuples of the form (title, link) where title is the title of any Wikipedia page appearing in a 
+        "See Also" note throughout the text of an article, and link is the link to that Wikipedia page
+    """
     notes = soup.find_all('div',{'role':'note'})
     see_alsos_ = [i for i in notes if any (j in i.text.strip() for j in ['See also', 'see also', 'See Also', 'See also:'])]
     ans = []
@@ -50,12 +97,33 @@ def find_see_also_notes(soup):
     return ans
 
 def find_categories(soup):
-    """Gets a list of the categories for a Wikipedia page"""
+    """Gets a list of the categories for a Wikipedia page
+    
+    Parameters 
+    ---------------
+    soup : BeautifulSoup object
+        A BS4 representation of a Wikipedia page
+
+    Returns 
+    --------------
+        A list of BS4 objects corresponding to the category links associated to the Wikipedia page
+    """
 
     return soup.find_all('div',{'id':'mw-normal-catlinks'})
 
 def get_cat_titles(soup):
-    """Returns a list of all the categories on a Wikipedia page, input as  a BS4 object"""
+    """Returns a list of all the categories on a Wikipedia page, input as  a BS4 object
+    
+    Parameters 
+    --------------
+    soup : BeautifulSoup object
+        A BS4 representation of a Wikipedia page
+    
+    Returns
+    --------------
+        A list of strings, where each string is a category found from finding the categories corresponding to the 
+        Wikipedia page
+    """
     try:
         cats = find_categories(soup)[0]
         return[i.text for i in cats.find_all('a') if i.text != 'Categories']
@@ -63,24 +131,76 @@ def get_cat_titles(soup):
         return []
 
 def extract_title(soup):
-    """Gets the title from the BS4 object of a Wikipedia page"""
+    """Gets the title from the BS4 object of a Wikipedia page
+    
+    Parameters
+    --------------
+    soup : BeautifulSoup object
+        A BS4 representation of a Wikipedia page
+
+    Returns
+    ---------------
+    title : str
+        The title of the Wikipedia page
+    """
     return soup.find_all('head')[0].find_all('title')[0].text.split(' - ')[0]
 
 def add_to_cat_dict(soup, category_dict):
-    """Given a BS4 of a Wikipedia page, gets its Categories and adds them to a category dictionary"""
+    """Given a BS4 of a Wikipedia page, gets its Categories and adds them to a category dictionary
+    
+    Parameters 
+    -----------------
+    soup : BeautifulSoup object
+        A BS4 representation of a Wikipedia page
+    category_dict: Dict
+        A dictionary whose keys are Wikipedia pages, and whose values are lists of the corresponding categories
+
+    Returns
+    ------------------
+    None
+        Modifies category_dict in-place to add the current page to the dictionary
+    """
     title = extract_title(soup)
     if title not in category_dict:
         category_dict[title] = get_cat_titles(soup)
 
 def add_to_link_dict(response, title_to_link_dict):
-    """Adds the title as a key to a title-to-link dictionary, with the url as the value; the input is the requests.get object for the url"""
+    """Adds the title as a key to a title-to-link dictionary, with the url as the value; the input is the 
+    requests.get object for the url
+    
+    Parameters
+    ----------------
+    response : requests.get object
+        The result of a request to a Wikipedia page
+    title_to_link_dict : Dict
+        A dict whose keys are Wikipedia page titles, and whose value is the corresponding link to that page
+
+    Returns
+    ----------------
+    None
+        Modifies title_to_link_dict in-place to add the current page to the dictionary
+
+    """
     soup = BeautifulSoup(response.text)
     title = extract_title(soup)
     if title not in title_to_link_dict:
         title_to_link_dict[title] = response.url
 
 def get_titles_and_links(section):
-    """Section is a BS4 object, and this returns a list of tuples of the form (link text, link url) for all the links in that section"""
+    """Section is a BS4 object, and this returns a list of tuples of the form (link text, link url) for all the 
+    links in that section
+    
+    Parameters
+    ---------------
+    section : BeautifulSoup object
+        A BS4 representation of a section of a Wikipedia page
+
+    Returns
+    --------------
+    links : List
+        A list whose entries are of the form (title, link) where title is the title of a Wikipedia page, and link
+        is the link to that page, for all Wikipedia pages linked to from section
+    """
     links = []
     for i in section.find_all('a'):
         if i.text != 'edit':
@@ -91,7 +211,36 @@ def get_titles_and_links(section):
     return links
 
 def bfs_search(url, dictionaries, depth=3):
-    """Starting at a given url, searches outward to a depth of depth and adds the linkage data to a dictionary"""
+    """Starting at a given url, searches outward to a depth of depth and adds the linkage data to a dictionary
+    
+    Parameters
+    ---------------
+    url : str
+        The url of a Wikipedia page
+    
+    dictionaries : List
+        A list of dictionaries, graph_dict, text_to_link_dict, category_dict respectively, which comprise:
+    
+    graph_dict : Dict
+        A dictionary represntation of the connectedness graph, whose keys are Wikipedia pages, and values are lists
+        of all pages linked to from that page's "See Also" section
+
+    text_to_link_dict : Dict
+        Dictionary whose keys are Wikipedia page titles, and values are the associated link to that page
+    
+    category_dict : Dict
+        Dictioanary whose keys are Wikipedia page titles, and values are lists of all the categories associated to 
+        that page
+
+    Depth : int
+        The depth to which the breadth-first search should go
+
+    Returns
+    ----------------
+    None
+        Modifies the dictionaries in-place by adding all pages up to a distance of depth from url into the 
+        dictionaries in the appropriate way
+    """
     
     # Initialize the search by saying we have visited the start page, and the start page has a depth of 0
     visited = [url]
