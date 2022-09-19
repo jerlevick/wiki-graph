@@ -7,7 +7,7 @@ About
 A Python library with tools to scrape Wikipedia for the "See All" connections between articles, store the information in a
 graph, and perform graph analysis on the graph, including clustering.
 
-Accessible at <a href="[jerlevickdi.herokuapp.com](https://jerlevickdi.herokuapp.com/)">jerlevickdi.herokuapp.com</a>
+Accessible at <a href="https://jerlevickdi.herokuapp.com/">jerlevickdi.herokuapp.com</a>
 
 <a href="https://github.com/jerlevick/wiki-graph">Github</a>
 
